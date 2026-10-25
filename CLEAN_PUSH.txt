@@ -1,0 +1,14 @@
+# Termux / phone: clean then push (must wipe old com/example mix)
+cd $HOME/maxcut
+find . -mindepth 1 -maxdepth 1 ! -name '.' ! -name '..' -exec rm -rf {} +
+unzip -oq $HOME/storage/downloads/after_motion_ui_only.zip
+# must print ONLY com/example paths:
+find app/src/main/java -type d -name 'studio' -o -name 'aftermotion'
+# (should be empty)
+git init && git branch -M main
+git remote add origin https://github.com/bluu6964/MaxCut.git
+git config user.name "bluu6964"
+git config user.email "bluu6964@gmail.com"
+git add -A
+git commit -m "UI-only build: compile fixes"
+git push --force origin main
