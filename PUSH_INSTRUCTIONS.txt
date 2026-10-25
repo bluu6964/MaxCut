@@ -1,0 +1,20 @@
+CRITICAL: wipe the folder completely before unzip.
+
+cd $HOME/maxcut
+find . -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+unzip -oq $HOME/storage/downloads/after_motion_ui_only.zip
+
+# Must show ONLY aftermotion paths:
+find app/src/main/java -type d | head -20
+
+# Must be EMPTY:
+find app -path '*com/example*' 
+
+git init
+git branch -M main
+git remote add origin https://github.com/bluu6964/MaxCut.git
+git config user.name "bluu6964"
+git config user.email "bluu6964@gmail.com"
+git add -A
+git commit -m "UI-only: consistent com.aftermotion.studio + compile fixes"
+git push --force origin main
