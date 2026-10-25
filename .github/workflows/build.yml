@@ -1,0 +1,55 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Accept Android SDK licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 9.3.1
+
+      - name: Assemble debug APK
+        run: gradle assembleDebug --no-daemon
+
+      - name: Assemble release APK
+        run: gradle assembleRelease --no-daemon
+
+      - name: Publish APKs to a Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="build-${{ github.run_number }}"
+          cp app/build/outputs/apk/debug/*.apk "AfterMotion-debug-${TAG}.apk"
+          cp app/build/outputs/apk/release/*.apk "AfterMotion-release-${TAG}.apk"
+          gh release create "$TAG" AfterMotion-debug-*.apk AfterMotion-release-*.apk \
+            --title "Build ${{ github.run_number }} (UI-only)" --notes "Commit ${{ github.sha }}" --prerelease
+          gh release list --limit 100 --json tagName --jq '.[5:][].tagName' \
+            | xargs -r -n1 gh release delete --cleanup-tag --yes || true
+
+      - name: Unit tests
+        run: gradle testDebugUnitTest --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-reports
+          path: app/build/reports/tests/
+          retention-days: 1
